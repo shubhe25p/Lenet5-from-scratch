@@ -298,3 +298,8 @@ def cnn_backprop(A3 , Y, cache):
   return parameters
 
 
+a=y_train[:10]
+b = np.zeros((10,10))
+b[a,np.arange(10)]=1
+y5=b
+y5.shape
