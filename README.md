@@ -10,3 +10,4 @@ Train Accuracy: 75%
 Test Accuracy: 65%
 
 
+![alt text](lenet_arc.png)
