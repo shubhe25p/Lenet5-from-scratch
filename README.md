@@ -39,8 +39,8 @@ We load the MNIST dataset using the Keras library. The Keras library has a suite
 Install the dependencies and devDependencies and start running knn_predict.py.
 
 ```sh
-$ cd Emotion-detection-from-EEG
-$ python knn.predict.py
+$ cd Lenet5-from-scratch
+$ python lenet5.py
 ```
 
 ### Todos
