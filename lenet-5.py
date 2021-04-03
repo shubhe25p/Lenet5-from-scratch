@@ -1,9 +1,8 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from keras.datasets import mnist
+import tensorflow as tf
 
-(x_train, y_train), (x_test, y_test) = mnist.load_data()
-
+(x_train, y_train), (x_test, y_test) = tf.keras.datasets.mnist.load_data()
 
 def pad(x,pad):
   x_pad=np.pad(x,((0,0),(pad,pad),(pad,pad),(0,0)),mode='constant',constant_values=(0,0))
@@ -70,7 +69,7 @@ def pooling(X, pool_filter, mode, stride):
 
 def tanh(Z):
 
-  thx=(np.exp(Z) - np.exp(-Z))/(np.exp(Z) + np.exp(-Z))
+  thx=(np.exp(Z) - np.exp(-Z))/(np.exp(Z) + np.exp(-Z)+0.0000001)
 
   return thx
 
@@ -80,6 +79,10 @@ def softmax(Z):
   sfx=np.exp(Z)/sum
 
   return sfx
+
+def relu(Z):
+
+  return np.max(Z,0)
 
 def cnn_forward(X,W1,b1,W2,b2,W3,b3,W4,b4,W5,b5):
 
@@ -269,7 +272,7 @@ def cnn_backprop(A3 , Y, cache):
   db3 = dZ5
   dA0 = np.dot(W3,dZ5)
 
-  dA0=dA0.reshape(10,5,5,16)
+  dA0=dA0.reshape(32,5,5,16)
   #Pool_back
 
   dZ3 = pool_back(dA0, cache=(Z3,2,2), mode='avg')
@@ -297,9 +300,107 @@ def cnn_backprop(A3 , Y, cache):
   }
   return parameters
 
+def input(i):
+  X=x_train[32*i:32*(i+1)]
+  X=X[:,:,:,np.newaxis]
+  X=X/255
+  a=y_train[32*i:32*(i+1)]
+  b = np.zeros((10,32))
+  b[a,np.arange(32)]=1
+  Y=b
 
-a=y_train[:10]
-b = np.zeros((10,10))
-b[a,np.arange(10)]=1
-y5=b
-y5.shape
+  return X,Y
+
+def train(x_train, y_train):
+
+  cnt=0
+  W1=np.random.randn(6,5,5,1)*(1/1500)
+  b1=np.random.randn(1,1,1,6)*(1/1500)
+  W2=np.random.randn(16, 5, 5, 6)*(1/1500)
+  b2=np.random.randn(1,1,1,16)*(1/1500)
+  W3=np.random.randn(400,120)*(1/1400)
+  b3=np.random.randn(120,1)*(1/1400)
+  W4=np.random.randn(120,84)*(1/1400)
+  b4=np.random.randn(84,1)*(1/1400)
+  W5=np.random.randn(84, 10)*(1/1840)
+  b5=np.random.randn(10,1)*(1/1840)
+
+  costs=[]
+
+
+  for batch in range(1875):
+    X,Y = input(batch)
+
+    for i in range(1500):
+
+      Y_pred, cache=cnn_forward(X,W1,b1,W2,b2,W3,b3,W4,b4,W5,b5)
+      parameters=cnn_backprop(Y_pred,Y,cache)
+      dW1=parameters['dW1']
+      db1=parameters['db1']
+      dW2=parameters['dW2']
+      db2=parameters['db2']
+      dW3=parameters['dW3']
+      db3=parameters['db3']
+      dW4=parameters['dW4']
+      db4=parameters['db4']
+      dW5=parameters['dW5']
+      db5=parameters['db5']
+
+      W1 = W1 -(0.003)*dW1
+      b1 = b1 -(0.003)*db1
+      W2 = W2 -(0.003)*dW2
+      b2 = b2 -(0.003)*db2
+      W3 = W3 -(0.003)*dW3
+      b3 = b3 -(0.003)*db3
+      W4 = W4 -(0.003)*dW4
+      b4 = b4 -(0.003)*db4
+      W5 = W5 -(0.003)*dW5
+      b5 = b5 -(0.003)*db5
+    
+    cost=compute_cost(Y_pred,Y)
+    costs.append(cost)
+    print("Cost after {i} batches={cost}".format(i=batch,cost=cost))
+
+  plt.plot(list(range(1875)),costs,'r')
+  Y_pred, _ = cnn_forward(X_train, W1, b1, W2, b2, W3, b3, W4, b4 , W5, b5)
+  for i in range(60000):
+
+    if(Y_pred[:,i] == Y_train[:,i]):
+      cnt=cnt+1
+  print("Train_Accuracy:{acc}".format(acc=(cnt/60000)))
+
+  return W1, b1, W2, b2, W3, b3, W4, b4 , W5, b5
+
+def test(X_test, Y_test, W1, b1, W2, b2, W3, b3, W4, b4 , W5, b5):
+
+  cnt=0
+  Y_pred_test,_=cnn_forward(X_test, W1, b1, W2, b2, W3, b3, W4, b4 , W5, b5)
+  for i in range(10000):
+
+    if(Y_test[:,i]==Y_pred_test[:,i]):
+      cnt=cnt+1
+  
+  print("Test Accuracy:{acc}".format(acc=(cnt/10000)))
+
+def run_Lenet():
+  X_train=x_train[:,:,:,np.newaxis]
+  X_train=X_train/255
+  a=y_train
+  b = np.zeros((10,60000))
+  b[a,np.arange(60000)]=1
+  Y_train=b
+
+  X_test=x_test[:,:,:,np.newaxis]
+  X_test=X_test/255
+  a=y_test
+  b = np.zeros((10,10000))
+  b[a,np.arange(10000)]=1
+  Y_test=b
+
+  train(X_train,Y_train)
+  test(X_test, Y_test)
+
+run_Lenet()
+
+
+
